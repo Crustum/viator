@@ -1,0 +1,15 @@
+{% for route in routes %}
+{{ include('method.twig', route)|trim }}
+
+{% endfor %}
+/**
+* Multiple routes resolve to {{ controller }}::{{ originalMethod }}, so this export is a
+* dictionary keyed by URI rather than a callable, with the verbs prefixed where two routes share a URI.
+* Call a specific route with `{{ method }}['<key>'](...)`, or import the route by name from your
+* generated `routes/` directory.
+*/
+{{ shouldExport ? 'export ' : '' }}const {{ method }} = {
+{% for route in routes %}
+    {{ route.keyJson }}: {{ route.tempMethod }},
+{% endfor %}
+}

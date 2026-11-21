@@ -1,0 +1,10 @@
+/**
+ * @see {{ controller }}::{{ docMethod }}
+ * @see {{ path }}:{{ line }}
+{% for parameter in parameters %}
+{% if parameter.default is not null %}
+ * @param {{ parameter.name }} - Default: {{ parameter.defaultJson }}
+{% endif %}
+{% endfor %}
+ * @route {{ uri }}
+ */

@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - 'main'
+      - '1.x'
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    uses: Crustum/.github/.github/workflows/testsuite-with-db.yml@v1
+    with:
+      php-versions: '["8.4", "8.5", "8.6"]'
+      db-types: '["sqlite"]'
+      test-cmd: 'vendor/bin/phpunit --configuration=phpunit.xml.dist'
+      coverage-php: '8.4'
+      coverage-db: 'sqlite'
+    secrets: inherit
+
+  cs:
+    uses: Crustum/.github/.github/workflows/cs-stan.yml@v1
+    secrets: inherit

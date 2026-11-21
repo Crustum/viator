@@ -1,0 +1,108 @@
+---
+name: viator-development
+description: "ACTIVATE when working with CakePHP Viator, which generates TypeScript from a CakePHP application: controller-action and named-route functions, entity model types, Inertia page props, form types, PHP enum unions, broadcast channels and events, and Vite environment variables. Trigger when the user mentions Viator, viator routes, the ViatorIgnore attribute, or imports from actions/ or routes/. Also activate when a frontend needs typed URLs for CakePHP routes, typed Inertia props, typed Echo channels or events, or when generated types are missing, stale or leaking data that should stay on the server. Do NOT activate for Ziggy, or for hand-written TypeScript with no CakePHP backend behind it."
+license: MIT
+metadata:
+  author: crustum
+---
+
+# CakePHP Viator
+
+Viator reads the CakePHP application and writes TypeScript for it. The PHP is the source of truth; the TypeScript is build output.
+
+## Generated Files Are Output
+
+Everything under the output directory (`resources/js` by default, overridable via `Viator.output`) is regenerated on every run. Never edit it, never patch around it, and never commit a fix to it — change the PHP that produced it and run `{{ assist.cakeCommand('viator routes') }}`.
+
+```
+{{ assist.cakeCommand('viator routes') }}                          # regenerate
+{{ assist.cakeCommand('viator routes --path=resources/js') }}      # explicit output path
+{{ assist.cakeCommand('viator routes --with-form') }}               # form helpers (on by default)
+{{ assist.cakeCommand('viator routes --no-with-form') }}            # skip form variants
+{{ assist.cakeCommand('viator routes --skip-types --skip-env --skip-broadcasts') }}
+```
+
+There is no analysis cache, so there is no `--fresh` equivalent: every run scans from scratch.
+
+The same applies to types. Import `App.Model.Entity.User` from `viator/types` rather than writing a matching interface by hand; a hand-written copy stops matching the backend the first time a column changes, and nothing fails to tell you.
+
+## What Generates What
+
+| Output | Discovery |
+|---|---|
+| `actions/` functions | Scanned controller actions × `/{controller}/{action}/*` fallback plus explicit routes |
+| `routes/` functions | `Router` named routes (`_name`; `/` and `:` become `.`) |
+| Entity model types (`App.Model.Entity.*`, `MyPlugin.Model.Entity.*`) | Entity `@property` annotations (host plus `--plugin` / `Viator.scanPlugins` entity dirs, or `Viator.entityDirs`) |
+| `Inertia.Pages.*` in `types.d.ts` | `$this->inertia('Comp', [...])` calls in controllers |
+| `App.Form.*` in `types.d.ts` | `validationDefault()` validator DSL in `Form` classes |
+| Enum unions in `types.d.ts` | Native `enum` declarations (backed values, pure cases; empty enums become `never`) |
+| `vite-env.d.ts` | `import.meta.env.VITE_*` plus dotenv keys |
+| `viator/broadcast-events.ts` | Classes exposing `broadcastEvent()` / `broadcastChannel()` / `broadcastData()` |
+
+## Calling Routes
+
+One action on one URL is one callable (`view({ id })`, `view.url(...)`). A param-less `index` action matches both `/{controller}` and `/{controller}/{action}/*`: the root URL keeps the plain name (`index()` → `/demo`) and the explicit one gets an `Explicit` suffix (`indexExplicit()` → `/demo/index`). Any other same-method collision keeps a URI-keyed dictionary (`shared['<key>'](...)`); when one URI answers to several verbs the keys are verb-prefixed (`handle['get /shared-uri/{name}']`).
+
+A route function returns `{ url, method }`. `.url()` returns the string alone.
+
+```typescript
+view({ id: 1 });        // { url: "/demo/view/1", method: "get" }
+view.url({ id: 1 });    // "/demo/view/1"
+view.url(1);            // scalar shorthand also works
+
+// Query parameters
+view({ id: 1 }, { query: { page: 2 } });
+view({ id: 1 }, { mergeQuery: { page: 3 } });
+```
+
+Method variants (`.get()`, `.patch()`) are there when a route answers to more than one verb. Spread `.form()` into an HTML `<form>`: it returns `{ action, method }` with `_method` spoofing already in the query string, because forms only speak GET and POST.
+
+```typescript
+deleteMethod.form.delete({ id: 1 });  // { action: "/demo/delete/1?_method=DELETE", method: "post" }
+```
+
+## Leaving Things Out
+
+Viator can see more of the application than belongs in a browser bundle. Decide this deliberately for anything touching tokens, internal endpoints, admin-only relations or personal data.
+
+Use the `#[ViatorIgnore]` attribute (`Crustum\Viator\Attribute\ViatorIgnore`) on a controller class or single action, or on an entity property. On a class nothing is generated at all; on an action it is dropped from `actions/` output (explicit named `routes/` entries are kept).
+
+```php
+use Crustum\Viator\Attribute\ViatorIgnore;
+
+#[ViatorIgnore]
+public function impersonate(): void
+{
+}
+```
+
+`unless: <condition>` keeps a declaration only while the condition holds; `when: <condition>` drops it while the condition holds. A condition is a `Configure` key or a `[class, method]` callable.
+
+```php
+#[ViatorIgnore(unless: 'Feature.enabled')]
+public function beta(): void
+{
+}
+```
+
+Facts worth holding on to:
+
+- Controller verbs come from the action body: `$this->request->allowMethod([...])` is restrictive (exactly those verbs), `$this->request->is('post')` checks are additive on top of GET.
+- Request DTOs and container-injected services (class-typed parameters) never become URL segments; only builtin-typed and untyped parameters do. Parameters with defaults become optional (`{param?}`); route defaults also mark a parameter optional with its default.
+- Vendor plugin controllers are NOT scanned by default; opt in per run with `--plugin` or via `Viator.scanPlugins`.
+- Per-app trait helpers that are not actions go in `Viator.ignoreActions` (plain names, or `Controller::method` pairs), never in the generated output.
+
+## Common Pitfalls
+
+- Editing generated files. The next run overwrites the change.
+- Redeclaring a model, page prop, form or enum type by hand instead of importing it from `viator/types`.
+- Comparing against a string literal where an enum union exists. A renamed PHP case leaves the literal compiling and wrong.
+- Assuming class-typed action parameters appear in the URL. They do not.
+- Leaving a token, internal endpoint or admin-only relation in the generated output because nothing forced the decision.
+
+## Verification
+
+1. Confirm no file under the output directory has been edited by hand.
+2. Confirm the frontend imports types from `viator/types` rather than declaring its own.
+3. Confirm nothing sensitive appears in the generated output — search it for token, secret and internal-only field names.
+4. Confirm `{{ assist.cakeCommand('viator routes') }}` runs clean and leaves no diff after a fresh run.

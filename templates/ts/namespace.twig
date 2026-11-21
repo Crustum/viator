@@ -1,0 +1,7 @@
+const {{ varExport }} = {
+{% for entry in entries %}
+    {{ entry.key }}: {{ entry.alias }},
+{% endfor %}
+}
+
+export default {{ varExport }}

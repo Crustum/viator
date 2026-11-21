@@ -1,0 +1,89 @@
+{
+    "name": "crustum/viator",
+    "description": "CakePHP Viator generates type-safe TypeScript for routes, entities, forms, enums, Inertia data, broadcasts, and Vite env from your backend",
+    "type": "cakephp-plugin",
+    "license": "MIT",
+    "keywords": [
+        "cakephp",
+        "crustum",
+        "viator"
+    ],
+    "authors": [
+        {
+            "name": "Evgeny Tomenko",
+            "homepage": "https://github.com/skie"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "cakephp/cakephp": "^5.4",
+        "crustum/investigator": "dev-main",
+        "crustum/scrutator": "dev-main",
+        "nikic/php-parser": "^5.4",
+        "phpstan/phpdoc-parser": "^2.1",
+        "twig/twig": "^3.30"
+    },
+    "suggest": {
+        "crustum/plugin-manifest": "CakePHP plugin installer"
+    },
+    "require-dev": {
+        "cakedc/cakephp-phpstan": "^4.3",
+        "cakephp/cakephp-codesniffer": "^5.3",
+        "crustum/plugin-manifest": "^1.2",
+        "phpstan/phpstan": "^2.3",
+        "phpunit/phpunit": "^11.1|^12.5|^13.0|^14.0",
+        "rector/rector": "^2.7",
+        "crustum/inertia-cakephp": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "Crustum\\Viator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Crustum\\Viator\\Test\\": "tests/",
+            "TestApp\\": "tests/TestApp/"
+        }
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@rector-check",
+            "@test",
+            "@analyse"
+        ],
+        "fix": [
+            "@cs-fix",
+            "@rector-fix",
+            "@cs-fix",
+            "@analyse"
+        ],
+        "analyse": [
+            "@stan"
+        ],
+        "cs-check": "phpcs -p --standard=phpcs.xml src/ tests/",
+        "cs-fix": "phpcbf --standard=phpcs.xml src/ tests/",
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite=Unit",
+        "test:integration": "phpunit --testsuite=Integration",
+        "test:js": "vitest run",
+        "test:js:types": "tsc --noEmit",
+        "rector-check": "vendor/bin/rector process --dry-run",
+        "rector-fix": "vendor/bin/rector process",
+        "stan": "phpstan analyse src/",
+        "stan-baseline": "phpstan analyse --generate-baseline"
+    },
+    "extra": {
+        "installer-name": "Viator"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "cakephp/plugin-installer": true,
+            "php-http/discovery": false
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

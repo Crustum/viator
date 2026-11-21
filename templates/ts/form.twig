@@ -1,0 +1,43 @@
+{{ include('docblock.twig')|trim }}
+const {{ formMethod }} = ({{ include('function-arguments.twig')|trim }}): RouteFormDefinition<{{ firstSafeJson }}> => ({
+    action: {{ method }}.url(
+{% if parameters %}
+        {{ args }},
+{% endif %}
+{% if firstSafe == firstActual %}
+        {{ options }}
+{% else %}
+        {
+            [{{ options }}?.mergeQuery ? 'mergeQuery' : 'query']: {
+                _method: {{ firstActualUpperJson }},
+                ...({{ options }}?.query ?? {{ options }}?.mergeQuery ?? {}),
+            }
+        }
+{% endif %}
+    ),
+    method: {{ firstSafeJson }},
+})
+
+{% for verb in verbs %}
+{{ include('docblock.twig')|trim }}
+{{ formMethod }}.{{ verb.actual }} = ({{ include('function-arguments.twig')|trim }}): RouteFormDefinition<{{ verb.safeJson }}> => ({
+    action: {{ method }}.url(
+{% if parameters %}
+        {{ args }},
+{% endif %}
+{% if verb.safe == verb.actual %}
+        {{ options }}
+{% else %}
+        {
+            [{{ options }}?.mergeQuery ? 'mergeQuery' : 'query']: {
+                _method: {{ verb.upperJson }},
+                ...({{ options }}?.query ?? {{ options }}?.mergeQuery ?? {}),
+            }
+        }
+{% endif %}
+    ),
+    method: {{ verb.safeJson }},
+})
+
+{% endfor %}
+{{ method }}.form = {{ formMethod }}

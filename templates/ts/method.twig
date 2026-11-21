@@ -1,0 +1,72 @@
+{{ include('docblock.twig')|trim }}
+{{ shouldExport ? 'export ' : '' }}const {{ method }} = ({{ include('function-arguments.twig')|trim }}): RouteDefinition<{{ firstVerbJson }}> => ({
+    url: {{ method }}.url({{ parameters ? args ~ ', ' ~ options : options }}),
+    method: {{ firstVerbJson }},
+})
+
+{{ include('docblock.twig')|trim }}
+{{ method }}.definition = {
+    methods: {{ verbsJson }},
+    url: {{ uriLiteral }},
+} satisfies RouteDefinition<{{ verbsJson }}>
+
+{{ include('docblock.twig')|trim }}
+{{ method }}.url = ({{ include('function-arguments.twig')|trim }}) => {
+{% if parameters|length == 1 %}
+    if (typeof {{ args }} === 'string' || typeof {{ args }} === 'number') {
+        {{ args }} = { {{ parameters[0].name }}: {{ args }} }
+    }
+
+{% endif %}
+{% if parameters is not empty %}
+    if (Array.isArray({{ args }})) {
+        {{ args }} = {
+{% for parameter in parameters %}
+            {{ parameter.name }}: {{ args }}[{{ loop.index0 }}],
+{% endfor %}
+        }
+    }
+
+    {{ args }} = applyUrlDefaults({{ args }})
+
+{% endif %}
+{% if hasOptional %}
+    validateParameters({{ args }}, [
+{% for parameter in parameters %}
+{% if parameter.optional %}
+        {{ parameter.nameJson }},
+{% endif %}
+{% endfor %}
+    ])
+
+{% endif %}
+{% if parameters is not empty %}
+    const {{ parsedArgs }} = {
+{% for parameter in parameters %}
+        {{ parameter.name }}: {{ args }}{{ allOptional ? '?' : '' }}.{{ parameter.name }}{{ parameter.default is not null ? ' ?? ' ~ parameter.defaultJson : '' }},
+{% endfor %}
+    }
+
+{% endif %}
+    return {{ method }}.definition.url
+{% for parameter in parameters %}
+            .replace({{ parameter.placeholderJson }}, {{ parsedArgs }}.{{ parameter.name }}{{ parameter.optional ? '?' : '' }}.toString(){{ parameter.optional ? " ?? ''" : '' }})
+{% endfor %}
+{% if parameters is not empty %}
+            .replace(/\/+$/, '')
+{% endif %}
+        + queryParams({{ options }})
+}
+
+{% for verb in verbs %}
+{{ include('docblock.twig')|trim }}
+{{ method }}.{{ verb.actual }} = ({{ include('function-arguments.twig')|trim }}): RouteDefinition<{{ verb.actualJson }}> => ({
+    url: {{ method }}.url({{ parameters ? args ~ ', ' ~ options : options }}),
+    method: {{ verb.actualJson }},
+})
+
+{% endfor %}
+{% if withForm %}
+{{ include('form.twig')|trim }}
+
+{% endif %}

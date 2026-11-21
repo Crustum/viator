@@ -1,0 +1,17 @@
+# CakePHP Viator
+
+This application uses Viator (`crustum/viator`) to generate TypeScript from its CakePHP code: controller-action and named-route functions, entity model types, Inertia page props, form types, enum unions, broadcast channels/events, and Vite environment variables.
+
+- Generated files live under `resources/js` (`actions/`, `routes/`, `viator/`) and are never hand-edited; change the PHP and run `{{ assist.cakeCommand('viator routes') }}`.
+- Import action functions from the path matching the controller (`actions/Demo`, `actions/Admin/Dashboard`), named routes from `routes/<name>`, and every type from `viator/types`.
+- Import types rather than redeclaring them. A hand-written interface for a model, page props or a form will drift.
+- Keep anything that should not reach the browser out with the `#[ViatorIgnore]` attribute (`Crustum\Viator\Attribute\ViatorIgnore`).
+
+@scoped(['src/Controller/**'])
+## Controllers and routes
+- Actions are discovered from `Controller` classes crossed with the `/{controller}/{action}/*` fallback plus explicit routes; named routes (`_name`) become `routes/` functions.
+- Action verbs come from the body: `$this->request->allowMethod([...])` is restrictive, `$this->request->is('post')` is additive, otherwise GET.
+- Only builtin-typed or untyped parameters become URL segments; request DTOs and injected services never do.
+@endscoped
+
+When working on Viator itself — generation, route resolution, converters, or debugging missing output — invoke `viator-development` for detailed rules.

@@ -1,0 +1,5 @@
+{% if parameters is empty %}
+{{ options }}?: RouteQueryOptions
+{% else %}
+{{ args }}{{ allOptional ? '?' : '' }}: { {% for parameter in parameters %}{{ parameter.name }}{{ parameter.optional ? '?' : '' }}: {{ parameter.types }}{{ loop.last ? '' : ', ' }}{% endfor %} } | [{% for parameter in parameters %}{{ parameter.safeName }}: {{ parameter.types }}{{ loop.last ? '' : ', ' }}{% endfor %}]{% if parameters|length == 1 %} | {{ parameters[0].types }}{% endif %}, {{ options }}?: RouteQueryOptions
+{% endif %}

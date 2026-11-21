@@ -1,0 +1,41 @@
+{
+    "name": "@crustum/vite-plugin-viator",
+    "version": "0.1.0",
+    "description": "Vite plugin for Crustum Viator (CakePHP routes to TypeScript)",
+    "license": "MIT",
+    "homepage": "https://github.com/crustum/viator",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/crustum/viator.git",
+        "directory": "vite-plugin"
+    },
+    "bugs": {
+        "url": "https://github.com/crustum/viator/issues"
+    },
+    "type": "module",
+    "module": "./dist/vite-plugin-viator.js",
+    "types": "./dist/vite-plugin-viator.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/vite-plugin-viator.js",
+            "types": "./dist/vite-plugin-viator.d.ts"
+        }
+    },
+    "files": ["dist"],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "test": "vitest run",
+        "tsc": "tsc --noEmit"
+    },
+    "dependencies": {
+        "minimatch": "^10.0.1"
+    },
+    "peerDependencies": {
+        "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.2",
+        "vite": "^7.1.3",
+        "vitest": "^3.2.4"
+    }
+}
